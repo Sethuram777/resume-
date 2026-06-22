@@ -39,8 +39,9 @@ export function Hero() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
-              href="/resume.pdf"
-              download
+              href="https://www.overleaf.com/download/project/6a2d1b227ec04487931dc171/build/19eee70ec35-ee73e65aebb180ea/output/output.pdf?compileGroup=standard&clsiserverid=clsi-pre-emp-c3d-d-f-kt3w&enable_pdf_caching=true&popupDownload=true&editorId=4e8360fd-8e89-412a-9918-b2a976b45ade"
+              target="_blank"
+              rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-hero-gradient px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow transition-transform hover:scale-105"
             >
               <Download className="h-4 w-4" /> Download Resume
