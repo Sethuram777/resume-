@@ -1,7 +1,19 @@
 // Vercel serverless wrapper that adapts the bundled Start server to Node request/response
-export default async function handler(req, res) {
+async function getServer() {
+  // Try bundled server first (from build). If missing, fall back to package server-entry.
   try {
     const { default: serverModule } = await import('../dist/server/server.js');
+    return serverModule?.default ?? serverModule;
+  } catch (err) {
+    console.warn('Bundled server not found, falling back to @tanstack/react-start/server-entry', err?.message);
+    const m = await import('@tanstack/react-start/server-entry');
+    return (m.default ?? m);
+  }
+}
+
+export default async function handler(req, res) {
+  try {
+    const serverModule = await getServer();
     const server = serverModule?.default ?? serverModule;
 
     const url = new URL(req.url, `https://${req.headers.host}`);
