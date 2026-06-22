@@ -1,13 +1,20 @@
 // Vercel serverless wrapper that adapts the bundled Start server to Node request/response
 async function getServer() {
-  // Try bundled server first (from build). If missing, fall back to package server-entry.
+  // Prefer the server copied into the api folder at build time (api/dist-server).
+  // This ensures Vercel packages the server bundle with the function.
   try {
-    const { default: serverModule } = await import('../dist/server/server.js');
+    const { default: serverModule } = await import('./dist-server/server.js');
     return serverModule?.default ?? serverModule;
-  } catch (err) {
-    console.warn('Bundled server not found, falling back to @tanstack/react-start/server-entry', err?.message);
-    const m = await import('@tanstack/react-start/server-entry');
-    return (m.default ?? m);
+  } catch (firstErr) {
+    console.warn('api/dist-server not found, trying ../dist/server/server.js', firstErr?.message);
+    try {
+      const { default: serverModule } = await import('../dist/server/server.js');
+      return serverModule?.default ?? serverModule;
+    } catch (secondErr) {
+      console.warn('dist/server not found, falling back to @tanstack/react-start/server-entry', secondErr?.message);
+      const m = await import('@tanstack/react-start/server-entry');
+      return (m.default ?? m);
+    }
   }
 }
 
@@ -39,8 +46,14 @@ export default async function handler(req, res) {
     const arrayBuffer = await response.arrayBuffer();
     res.end(Buffer.from(arrayBuffer));
   } catch (err) {
-    console.error(err);
+    console.error('Handler error:', err?.stack ?? err?.message ?? err);
     res.statusCode = 500;
-    res.end('Internal Server Error');
+    // Return JSON with error message and stack to surface runtime issue in Vercel logs.
+    try {
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify({ status: 500, unhandled: true, message: err?.message, stack: err?.stack }));
+    } catch (e) {
+      res.end('Internal Server Error');
+    }
   }
 }
